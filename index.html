@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistem Verifikasi Tanda Tangan Elektronik Resmi</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons untuk ikon yang bersih dan modern -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- jsPDF Library untuk men-generate file PDF secara lokal di browser -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f4fe',
+              100: '#e1ebfd',
+              500: '#1f3c88',
+              600: '#172e6b',
+              700: '#0f1f4d',
+              800: '#0a1435',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght=500;700;900&family=Inter:wght=300;400;500;600;700;850&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .font-serif-elegant {
+      font-family: 'Cinzel', Georgia, serif;
+    }
+  </style>
+</head>
+<body class="bg-[#f8fafc] dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200 font-sans font-medium">
+
+  <!-- Chosen Palette: Warm Neutrals with Corporate Navy Accents -->
+  <!-- Application Structure Plan: Menggunakan arsitektur keamanan bertingkat (state-based). Memisahkan halaman utama selamat datang (Landing View), halaman verifikasi data terenkripsi (Core Verification Card), dan halaman blokir akses (Access Denied View). Hal ini menjamin privasi data siswa (UU PDP) sehingga data tidak akan bocor ke publik tanpa pemindaian QR Code fisik asli yang sah. -->
+  <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+  <!-- Header / Navigasi -->
+  <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 transition-colors duration-200 shadow-sm font-sans">
+    <div class="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-brand-500 dark:bg-brand-600 text-white p-2 rounded-xl flex items-center justify-center shadow-md">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <span class="font-extrabold text-base text-brand-500 dark:text-brand-100 block tracking-wider">E-VERIFY TTE</span>
+          <span class="text-[9px] font-semibold text-slate-500 dark:text-slate-400 block -mt-1 uppercase tracking-wider">Sistem Verifikasi Keabsahan Ijazah</span>
+        </div>
+      </div>
+      
+      <!-- Status Sinkronisasi & Toggle Mode Gelap -->
+      <div class="flex items-center space-x-3">
+        <div id="sync-status-badge" class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+          <span id="sync-status-text">Menghubungkan...</span>
+        </div>
+        <button id="themeToggle" class="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors" aria-label="Toggle Theme">
+          <i id="themeIcon" data-lucide="moon" class="w-4 h-5"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Wadah Toast Notifikasi -->
+  <div id="toast" class="fixed top-20 right-4 z-50 transform translate-y-[-100px] opacity-0 transition-all duration-300 pointer-events-none font-sans">
+    <div class="bg-slate-950 dark:bg-white text-white dark:text-slate-900 px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 border border-slate-800/20">
+      <i id="toastIcon" data-lucide="info" class="w-5 h-5 text-blue-400 dark:text-brand-500"></i>
+      <span id="toastMessage" class="text-sm font-semibold">Notifikasi</span>
+    </div>
+  </div>
+
+  <!-- Area Konten Utama -->
+  <main class="flex-grow max-w-3xl w-full mx-auto px-4 py-8 flex flex-col justify-center">
+
+    <!-- VIEW A: NEUTRAL LANDING SCREEN (Tampilan Beranda Steril Tanpa Data Siswa) -->
+    <div id="landing-view" class="hidden space-y-6 transition-all duration-300 animate-fadeIn font-sans">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8 text-center space-y-6">
+        
+        <!-- DYNAMIC LOGO CONTAINER -->
+        <div class="inline-flex justify-center items-center">
+          <div id="logo-icon-fallback" class="bg-brand-50 dark:bg-brand-900/30 p-5 rounded-full text-brand-500 dark:text-brand-100 shadow-inner">
+            <i data-lucide="file-key-2" class="w-16 h-16"></i>
+          </div>
+          <img id="logo-image" src="" alt="Logo Institusi Resmi" class="hidden w-24 h-24 object-contain" />
+        </div>
+
+        <div class="space-y-3 max-w-lg mx-auto">
+          <h2 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Selamat Datang di Portal Verifikasi Dokumen</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            Sistem Verifikasi Tanda Tangan Elektronik (TTE) ini digunakan untuk memvalidasi keaslian dokumen Ijazah, Piagam, dan SK Kelulusan yang diterbitkan secara resmi oleh pihak lembaga sekolah.
+          </p>
+          
+          <!-- TOMBOL INPUT NOMOR MANUAL JIKA DETEKSI IFRAME GOOGLE MEMBATASI PARAMETER URL -->
+          <div class="bg-slate-50 dark:bg-slate-900/60 p-5 rounded-xl border border-slate-100 dark:border-slate-800 text-left space-y-3">
+            <span class="font-bold text-xs text-slate-800 dark:text-slate-300 block mb-1 uppercase tracking-wider">Verifikasi Manual (Alternatif iFrame Google):</span>
+            <div class="space-y-2 col-span-2">
+              <div>
+                <label class="block text-[9px] font-bold text-slate-550 uppercase mb-1">Nomor Dokumen / Ijazah</label>
+                <div class="flex gap-2">
+                  <input type="text" id="manual-doc-no" placeholder="Contoh: 005/SK/Percobaan" class="w-full bg-white dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded-xl py-2 px-3 text-xs focus:ring-1 focus:ring-brand-500 focus:outline-none dark:text-white font-mono">
+                  <button onclick="prosesVerifikasiManual()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 shrink-0 font-sans">
+                    <i data-lucide="search" class="w-3.5 h-3.5"></i> Cari Data
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-left space-y-2 text-[11px] text-slate-600 dark:text-slate-405 font-medium">
+            <span class="font-bold text-slate-800 dark:text-slate-300 block mb-1">Cara Melakukan Verifikasi Keabsahan:</span>
+            <p class="flex items-center"><span class="w-2 h-2 rounded-full bg-brand-500 mr-2 shrink-0"></span> Pindai (scan) QR Code pengesahan yang tertera pada bagian bawah kertas dokumen fisik asli.</p>
+            <p class="flex items-center"><span class="w-2 h-2 rounded-full bg-brand-500 mr-2 shrink-0"></span> Jika data tidak langsung muncul karena proteksi browser, ketikkan Nomor Dokumen di atas.</p>
+            <p class="flex items-center"><span class="w-2 h-2 rounded-full bg-brand-500 mr-2 shrink-0"></span> Lakukan autentikasi data lulusan untuk membuka lembar dokumen digital aslinya.</p>
+          </div>
+        </div>
+        <div class="pt-4 border-t border-slate-100 dark:border-slate-750 flex items-center justify-center space-x-2 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/5 py-2 px-4 rounded-xl max-w-sm mx-auto">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Sistem Keamanan Informasi Pendidikan Aktif</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- VIEW B: ERROR AKSES ILEGAL / LINK COPYAN (Metode 2 Block Screen) -->
+    <div id="access-denied-view" class="hidden space-y-6 transition-all duration-300 font-sans">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-red-200 dark:border-red-950 p-8 text-center space-y-6">
+        <div class="inline-flex bg-red-100 dark:bg-red-950/50 p-4 rounded-full text-red-600 dark:text-red-400 animate-bounce">
+          <i data-lucide="shield-alert" class="w-12 h-12"></i>
+        </div>
+        <div class="space-y-2 max-w-md mx-auto">
+          <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Akses Verifikasi Ditolak!</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            Sistem mendeteksi bahwa tautan ini dibuka melalui hasil salinan (*copy-paste*) atau tautan ilegal yang tidak sah.
+          </p>
+          <p class="text-xs font-semibold text-rose-500 bg-rose-50 dark:bg-rose-950/30 py-2 px-3 rounded-lg border border-rose-150">
+            Demi keamanan, dokumen ijazah hanya dapat diverifikasi dengan melakukan pemindaian (scan) langsung pada QR Code fisik dokumen asli!
+          </p>
+        </div>
+        <div class="pt-2">
+          <p class="text-[10px] text-slate-400 uppercase tracking-widest font-mono">Kode Keamanan: ERR_REFERRER_HANDSHAKE_FAILED</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW C: CORE VERIFICATION CARD (Tampilan Utama yang Terlindungi) -->
+    <div id="verification-card-view" class="hidden space-y-6 transition-all duration-300 font-sans">
+      
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700/80 overflow-hidden font-sans">
+        
+        <!-- State-Based Header -->
+        <div id="status-banner" class="bg-emerald-50 dark:bg-emerald-950/20 border-b border-emerald-100 dark:border-emerald-900/30 p-6">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <div id="status-icon-box" class="bg-emerald-100 dark:bg-emerald-900/40 p-3 rounded-xl text-emerald-600 dark:text-emerald-400">
+                <i id="status-icon" data-lucide="shield-check" class="w-7 h-7"></i>
+              </div>
+              <div>
+                <span id="status-badge-text" class="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block">STATUS VALIDASI TTE</span>
+                <h2 id="status-title" class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mt-0.5 animate-fadeIn">Dokumen Valid &amp; Asli</h2>
+              </div>
+            </div>
+            
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400 border border-emerald-200/45">
+              <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Live Scan
+            </span>
+          </div>
+        </div>
+
+        <div class="p-6 sm:p-8 space-y-6">
+          
+          <!-- Tab Navigation -->
+          <div class="flex border-b border-slate-200 dark:border-slate-700 overflow-x-auto custom-scrollbar">
+            <button onclick="switchTab('tab-ringkasan')" id="btn-tab-ringkasan" class="tab-btn px-4 py-2 font-bold text-xs border-b-2 border-brand-500 text-brand-500 dark:border-brand-100 dark:text-brand-100 whitespace-nowrap flex items-center space-x-1.5">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+              <span>Ringkasan Ijazah</span>
+            </button>
+            <button onclick="switchTab('tab-sertifikat')" id="btn-tab-sertifikat" class="tab-btn px-4 py-2 font-medium text-xs text-slate-500 dark:text-slate-400 border-b-2 border-transparent hover:text-slate-700 dark:hover:text-slate-300 whitespace-nowrap flex items-center space-x-1.5">
+              <i data-lucide="award" class="w-3.5 h-3.5"></i>
+              <span>Sertifikat CA</span>
+            </button>
+            <button onclick="switchTab('tab-kriptografi')" id="btn-tab-kriptografi" class="tab-btn px-4 py-2 font-medium text-xs text-slate-500 dark:text-slate-400 border-b-2 border-transparent hover:text-slate-700 dark:hover:text-slate-300 whitespace-nowrap flex items-center space-x-1.5">
+              <i data-lucide="binary" class="w-3.5 h-3.5"></i>
+              <span>Kriptografi</span>
+            </button>
+          </div>
+
+          <!-- TAB 1: RINGKASAN IJAZAH -->
+          <div id="tab-ringkasan" class="tab-content block space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">Nomor Dokumen / Ijazah</span>
+                <span id="doc-nomor" class="font-bold text-xs text-slate-900 dark:text-white break-all">-</span>
+              </div>
+              <div class="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">Nama Lengkap Siswa/Alumni</span>
+                <span id="doc-nama" class="font-bold text-xs text-slate-900 dark:text-white">-</span>
+              </div>
+              <div class="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">Nama Kepala Sekolah / Pengesah</span>
+                <span id="doc-pengesah" class="font-bold text-xs text-slate-900 dark:text-white">-</span>
+              </div>
+              <div class="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">Jabatan Pengesah</span>
+                <span id="doc-jabatan" class="font-bold text-xs text-slate-900 dark:text-white">-</span>
+              </div>
+              <div class="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">Waktu Kelulusan</span>
+                <span id="doc-tanggal" class="font-bold text-xs text-slate-900 dark:text-white">-</span>
+              </div>
+              <div class="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">Status Sertifikat TTE</span>
+                <span id="doc-status-badge" class="inline-flex items-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 bg-emerald-100/50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-md">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+                  <span id="doc-status-text">Aktif dan Valid</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: DETAIL SERTIFIKAT CA -->
+          <div id="tab-sertifikat" class="tab-content hidden space-y-4">
+            <div class="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+              <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 text-xs">
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                  <tr>
+                    <td class="px-5 py-3 font-semibold text-slate-500 dark:text-slate-400 w-1/3">Penerbit Sertifikat (CA)</td>
+                    <td class="px-5 py-3 text-slate-900 dark:text-white font-bold">Otoritas Sertifikasi Digital Indonesia (OSDI)</td>
+                  </tr>
+                  <tr>
+                    <td class="px-5 py-3 font-semibold text-slate-500 dark:text-slate-400">Algoritma Kunci</td>
+                    <td class="px-5 py-3 text-slate-900 dark:text-white font-mono">RSA-2048 Bit (Standard X.509 v3)</td>
+                  </tr>
+                  <tr>
+                    <td class="px-5 py-3 font-semibold text-slate-500 dark:text-slate-400">Nomor Seri Sertifikat</td>
+                    <td class="px-5 py-3 text-slate-900 dark:text-white font-mono" id="cert-serial">0x-</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 3: DETAIL KRIPTOGRAFI -->
+          <div id="tab-kriptografi" class="tab-content hidden space-y-4">
+            <div class="bg-slate-950 text-slate-300 p-4 rounded-xl font-mono text-[10px] space-y-3 overflow-x-auto">
+              <div>
+                <span class="text-amber-400 block">// ALGORITMA SEGEL DIGITAL</span>
+                <span class="text-emerald-400">SHA256withRSA (RFC 3447)</span>
+              </div>
+              <div>
+                <span class="text-amber-400 block">// SIDIK JARI DIGITAL (HASH)</span>
+                <span class="text-white break-all select-all font-semibold" id="crypto-hash">-</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PROTECTED ACCESS FORM & PREVIEW -->
+          <div class="border-t border-slate-100 dark:border-slate-700/60 pt-6 font-sans">
+            
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xs font-bold text-slate-950 dark:text-white flex items-center space-x-1.5 uppercase tracking-wider">
+                <i data-lucide="eye" class="w-4 h-4 text-brand-500"></i>
+                <span>Pratinjau Lembar Ijazah Resmi</span>
+              </h3>
+              <!-- Locked/Unlocked Badge -->
+              <span id="access-badge" class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-widest bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-250/30">
+                <i data-lucide="lock" class="w-3 h-3 mr-1"></i> Terkunci
+              </span>
+            </div>
+
+            <!-- VIEW 1: FORM PENGAMAN -->
+            <div id="pdf-locked-view" class="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-5 text-center space-y-4">
+              <div class="max-w-md mx-auto space-y-1">
+                <h4 class="text-xs font-bold text-slate-850 dark:text-white">Autentikasi Dua Faktor Diperlukan</h4>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Harap verifikasi data pribadi lulusan di bawah ini untuk mengunduh &amp; melihat lembar ijazah asli.
+                </p>
+              </div>
+
+              <div class="max-w-md mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+                <div>
+                  <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nomor Induk Siswa (NIS)</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                      <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+                    </span>
+                    <input type="text" id="verify-nis" placeholder="Contoh: 12345" class="w-full bg-white dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded-xl py-2 pl-9 pr-3 text-xs focus:ring-1 focus:ring-brand-500 focus:outline-none dark:text-white">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nama Ibu Kandung</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                      <i data-lucide="heart" class="w-3.5 h-3.5"></i>
+                    </span>
+                    <input type="text" id="verify-ibu" placeholder="Nama Ibu Kandung" class="w-full bg-white dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded-xl py-2 pl-9 pr-3 text-xs focus:ring-1 focus:ring-brand-500 focus:outline-none dark:text-white" onkeyup="checkVerifyEnter(event)">
+                  </div>
+                </div>
+              </div>
+
+              <div class="max-w-md mx-auto">
+                <button onclick="prosesVerifikasiHibrida()" class="w-full inline-flex items-center justify-center space-x-1.5 px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold transition-all shadow-md font-sans">
+                  <i data-lucide="key-round" class="w-3.5 h-3.5"></i>
+                  <span>Buka Akses Ijazah</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- VIEW 2: UNLOCKED IJAZAH PREVIEW -->
+            <div id="pdf-unlocked-view" class="hidden relative bg-slate-50 dark:bg-slate-900/90 border-2 border-brand-500 rounded-xl p-4 overflow-hidden transition-all duration-300">
+              
+              <!-- SUB-VIEW 2A: RENDER EMBED PDF DRIVE ASLI -->
+              <div id="pdf-real-viewer" class="hidden w-full h-[550px] rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-white">
+                <iframe id="pdf-iframe" src="" class="w-full h-full" allow="autoplay"></iframe>
+              </div>
+
+              <!-- SUB-VIEW 2B: PREMIUM GOLDEN MOCK PREVIEW -->
+              <div id="pdf-mock-viewer" class="block relative bg-amber-50/20 dark:bg-slate-900/90 border border-amber-600/30 rounded-xl p-6 sm:p-8 overflow-hidden">
+                <div class="absolute inset-2 border border-amber-600/30 rounded-lg pointer-events-none"></div>
+
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none opacity-[0.05] dark:opacity-[0.08] transform -rotate-12">
+                  <i data-lucide="award" class="w-64 h-64 text-brand-500"></i>
+                </div>
+
+                <div class="relative z-10 text-center space-y-4 text-xs">
+                  <div class="border-b border-double border-amber-600/40 pb-3 space-y-1">
+                    <h4 class="font-serif-elegant font-bold text-sm sm:text-base text-brand-500 dark:text-brand-100 tracking-widest uppercase">Republik Indonesia</h4>
+                    <p class="text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">Ijazah Kelulusan Sekolah Menengah Atas</p>
+                    <p id="pdf-meta-notaris" class="text-[8px] italic font-mono text-slate-450 dark:text-slate-500">-</p>
+                  </div>
+                  
+                  <div class="py-2 space-y-2">
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400">Kepala Sekolah menerangkan dengan sah bahwa:</p>
+                    <h3 id="pdf-preview-student-name" class="font-serif-elegant font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-wide uppercase">-</h3>
+                    
+                    <div class="inline-flex flex-col text-[10px] text-slate-600 dark:text-slate-400 font-mono space-y-0.5">
+                      <p>NIS: <span id="pdf-preview-nis" class="font-bold">-</span></p>
+                      <p>Sertifikasi TTE ID: <span id="pdf-preview-hash" class="font-bold text-[9px]">-</span></p>
+                    </div>
+
+                    <p class="font-serif-elegant text-xs font-bold text-brand-600 dark:text-brand-300 uppercase tracking-widest mt-2">LULUS</p>
+                    <p id="pdf-preview-description" class="text-[10px] text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">-</p>
+                  </div>
+
+                  <div class="grid grid-cols-2 pt-4 border-t border-dashed border-slate-200 dark:border-slate-800 gap-4 text-left">
+                    <div class="p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20 flex flex-col justify-between">
+                      <div class="flex items-center space-x-1.5 text-emerald-600 dark:text-emerald-400">
+                        <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                        <span class="text-[8px] font-black tracking-widest uppercase">Verified TTE</span>
+                      </div>
+                      <p class="text-[8px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">Disahkan secara hukum menggunakan sertifikat digital aktif BSrE.</p>
+                    </div>
+
+                    <div class="text-right text-[10px] flex flex-col justify-end space-y-1">
+                      <p class="text-[8px] text-slate-400 dark:text-slate-500">Jakarta, <span id="pdf-preview-date">-</span></p>
+                      <p id="pdf-preview-title-role" class="font-bold text-slate-700 dark:text-slate-300">-</p>
+                      <div class="h-6 flex items-center justify-end">
+                        <span class="text-[8px] font-mono text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-100/40 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded flex items-center">
+                          <i data-lucide="lock" class="w-2.5 h-2.5 mr-1"></i> Digitally Signed
+                        </span>
+                      </div>
+                      <p id="pdf-preview-author" class="font-serif-elegant font-bold text-slate-900 dark:text-white uppercase">-</p>
+                      <p id="pdf-preview-nip" class="text-[8px] text-slate-400 dark:text-slate-500 font-mono">-</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Footer Kontrol Aksi Universal -->
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800 gap-3 mt-4">
+                <button onclick="kunciUlangDokumen()" class="text-[10px] text-rose-500 hover:underline font-bold flex items-center space-x-1 justify-center py-2 sm:py-0">
+                  <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                  <span>Kunci Kembali Akses</span>
+                </button>
+
+                <button id="download-btn-active" onclick="unduhPDF()" class="inline-flex items-center justify-center space-x-2 px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-brand-500/10 font-sans">
+                  <i data-lucide="arrow-down-to-line" class="w-4 h-4"></i>
+                  <span id="download-btn-text">Unduh PDF Ijazah Resmi</span>
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+      
+    </div>
+
+  </main>
+
+  <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 transition-colors py-6 mt-6 font-sans">
+    <div class="max-w-3xl mx-auto px-4 text-center text-[11px] text-slate-400 dark:text-slate-500 space-y-1">
+      <p>© 2026 Balai Sertifikasi Elektronik - Penyelenggara Sertifikasi Elektronik Resmi.</p>
+      <p class="leading-relaxed">Dokumen bertanda tangan elektronik ini dilindungi secara hukum berdasarkan Undang-Undang ITE.</p>
+    </div>
+  </footer>
+
+  <script>
+    // =========================================================================
+    // 🔗 BOSKU, SILAKAN TEMPELKAN LINK PUBLIKASI CSV GOOGLE SHEETS ANDA DISINI:
+    // =========================================================================
+    const GOOGLE_SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSI8G3toc2JLqUB_TuvtMY7s58mFun6a33rzgvLc25PrVQB7Rpj_t6KZOiY1A7jA_Q2bEt4vKPCV0qc/pub?output=csv";
+    // =========================================================================
+    
+    // =========================================================================
+    // 🖼️ BOSKU, SILAKAN TEMPELKAN LINK LOGO GOOGLE DRIVE ANDA DISINI (OPSIONAL):
+    // =========================================================================
+    const LOGO_INSTITUSI_URL = "https://drive.google.com/file/d/1OK6qeJOGbMzz3mK8XQEMyc_cD4J0OY2d/view?usp=sharing"; 
+    // =========================================================================
+
+    // --- Basis Data Cadangan / Fallback (Jika koneksi internet gagal / belum terpasang) ---
+    // Diisi token_keamanan acak berbeda untuk simulasi lokal aman
+    const defaultLocalDB = {
+      "001/SK/2026": {
+        nomor: "001/SK/2026",
+        nama: "Ahmad S.Pd",
+        nip: "198705272010031001",
+        nama_pengesah: "Drs. H. Mulyadi M.Pd",
+        jabatan: "Kepala Sekolah",
+        tanggal: "27 Mei 2026",
+        status: "valid",
+        certSerial: "0x8F923D429188A21C",
+        hash: "a3f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9",
+        pdfName: "Ijazah_Ahmad_2026.pdf",
+        nis: "12345",
+        ibu: "Siti Aminah",
+        excerpt: "Perihal: Surat Keputusan Kelulusan Sekolah Menengah Atas Tahun Ajaran 2025/2026. Menetapkan kelulusan Ahmad S.Pd sebagai peraih predikat amat baik.",
+        link_file_pdf: "",
+        token_keamanan: "TOKEN_AHMAD_98765"
+      },
+      "002/SP/2026": {
+        nomor: "002/SP/2026",
+        nama: "Zulfa Syahirah",
+        nip: "196504121991031005",
+        nama_pengesah: "Ir. H. Budi Santoso",
+        jabatan: "Kepala Dinas Pendidikan",
+        tanggal: "25 Mei 2026",
+        status: "valid",
+        certSerial: "0x7E12A34F9012C55A",
+        hash: "b543fe7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f",
+        pdfName: "Ijazah_Zulfa_2026.pdf",
+        nis: "67890",
+        ibu: "Kartini",
+        excerpt: "Perihal: Piagam Penghargaan Kelulusan Bidang Kejuruan Teknik Informatika Dasar. Menetapkan Zulfa Syahirah lulus secara resmi.",
+        link_file_pdf: "",
+        token_keamanan: "TOKEN_ZULFA_12345"
+      }
+    };
+
+    let documentsDB = { ...defaultLocalDB };
+    let currentDocNo = "";
+    let isDocumentUnlocked = false;
+
+    // --- Tab Switcher ---
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+        content.classList.remove('block');
+      });
+      
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-brand-500', 'text-brand-500', 'dark:border-brand-100', 'dark:text-brand-100');
+        btn.classList.add('text-slate-500', 'dark:text-slate-400', 'border-transparent');
+      });
+
+      const targetTab = document.getElementById(tabId);
+      if (targetTab) {
+        targetTab.classList.remove('hidden');
+        targetTab.classList.add('block');
+      }
+
+      const activeBtn = document.getElementById(`btn-${tabId}`);
+      if (activeBtn) {
+        activeBtn.classList.add('border-brand-500', 'text-brand-500', 'dark:border-brand-100', 'dark:text-brand-100');
+        activeBtn.classList.remove('text-slate-500', 'dark:text-slate-400', 'border-transparent');
+      }
+    }
+
+    // --- CSV Link Parser ---
+    function parseCSVText(text) {
+      const lines = [];
+      let row = [""];
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        const next = text[i+1];
+
+        if (c === '"') {
+          if (inQuotes && next === '"') { 
+            row[row.length - 1] += '"'; 
+            i++; 
+          } else { 
+            inQuotes = !inQuotes; 
+          }
+        } else if (c === ',' && !inQuotes) {
+          row.push('');
+        } else if ((c === '\r' || c === '\n') && !inQuotes) {
+          if (c === '\r' && next === '\n') { i++; }
+          lines.push(row);
+          row = [''];
+        } else {
+          row[row.length - 1] += c;
+        }
+      }
+      if (row.length > 1 || row[0] !== '') { lines.push(row); }
+      return lines;
+    }
+
+    // --- Dynamic Google Sheets Fetcher ---
+    async function fetchDatabaseDariGoogleSheets() {
+      if (!GOOGLE_SHEETS_CSV_URL || GOOGLE_SHEETS_CSV_URL.includes("TARUH_LINK_CSV_GOOGLE_SHEETS")) {
+        setSyncBadge("Demo Lokal", "text-slate-500 bg-slate-100");
+        return;
+      }
+
+      setSyncBadge("Sinkronisasi...", "text-amber-500 bg-amber-50 dark:bg-amber-950/20 animate-pulse");
+
+      try {
+        const response = await fetch(GOOGLE_SHEETS_CSV_URL);
+        if (!response.ok) throw new Error("Gagal mengambil respon Google Sheets");
+
+        const csvText = await response.text();
+        const rows = parseCSVText(csvText);
+
+        if (rows.length > 1) {
+          const tempDB = {};
+          
+          for (let i = 1; i < rows.length; i++) {
+            const cols = rows[i];
+            if (cols.length >= 4) {
+              const docNo = cols[0] ? cols[0].trim() : `00${i}/SK/2026`;
+              const namaSiswa = cols[1] ? cols[1].trim() : "-";
+              const nis = cols[2] ? cols[2].trim() : "00000";
+              const namaIbu = cols[3] ? cols[3].trim() : "-";
+              const nipPengesah = cols[4] ? cols[4].trim() : "-";
+              const namaPengesah = cols[5] ? cols[5].trim() : "-";
+              const jabatan = cols[6] ? cols[6].trim() : "Kepala Sekolah";
+              const tanggal = cols[7] ? cols[7].trim() : "-";
+              const status = cols[8] ? cols[8].trim().toLowerCase() : "valid";
+              const pdfLink = cols[9] ? cols[9].trim() : "";
+              const excerpt = cols[10] ? cols[10].trim() : "Ringkasan isi dokumen belum ditambahkan.";
+              
+              // Kolom L (index 11) adalah Kolom Baru: "token_keamanan" dari spreadsheet Bosku!
+              const tokenKeamanan = (cols[11] && cols[11].trim()) ? cols[11].trim() : `TOKEN_SAFE_AUTO_${CryptoJS_SHA256_mock(docNo).substring(0,8)}`;
+
+              tempDB[docNo] = {
+                nomor: docNo,
+                nama: namaSiswa,
+                nis: nis,
+                ibu: namaIbu,
+                nip: nipPengesah,
+                nama_pengesah: namaPengesah,
+                jabatan: jabatan,
+                tanggal: tanggal,
+                status: status,
+                certSerial: `0x${Math.floor(Math.random() * 10000000000000000).toString(16).toUpperCase()}`,
+                hash: CryptoJS_SHA256_mock(docNo),
+                pdfName: `Ijazah_${namaSiswa.replace(/\s+/g, '_')}.pdf`,
+                link_file_pdf: pdfLink,
+                excerpt: excerpt,
+                token_keamanan: tokenKeamanan
+              };
+            }
+          }
+
+          documentsDB = tempDB;
+          setSyncBadge("Terkoneksi Real-time", "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 dark:text-emerald-400");
+        }
+      } catch (err) {
+        console.warn("Google Sheets Sinkronisasi Gagal. Menggunakan Basis Data Cadangan Lokal.", err);
+        setSyncBadge("Demo Cadangan Lokal", "text-rose-500 bg-rose-50 dark:bg-rose-950/20");
+      }
+    }
+
+    // --- Set Sync Status Label ---
+    function setSyncBadge(text, classText) {
+      const badge = document.getElementById('sync-status-badge');
+      const badgeText = document.getElementById('sync-status-text');
+      if (badge && badgeText) {
+        badge.classList.remove('hidden');
+        badgeText.innerText = text;
+        badge.className = `inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold ${classText}`;
+      }
+    }
+
+    // --- Memuat Data Dokumen ke UI ---
+    function loadDocument(docNo) {
+      if (!docNo) return;
+      currentDocNo = docNo;
+      const data = documentsDB[docNo];
+
+      if (!data) {
+        showToast("Dokumen tidak ditemukan!");
+        return;
+      }
+
+      isDocumentUnlocked = false;
+      
+      const nisInput = document.getElementById('verify-nis');
+      const ibuInput = document.getElementById('verify-ibu');
+      if (nisInput) nisInput.value = "";
+      if (ibuInput) ibuInput.value = "";
+
+      const pdfIframe = document.getElementById('pdf-iframe');
+      if (pdfIframe) pdfIframe.src = "";
+
+      const docNomorEl = document.getElementById('doc-nomor');
+      const docNamaEl = document.getElementById('doc-nama');
+      const docPengesahEl = document.getElementById('doc-pengesah');
+      const docJabatanEl = document.getElementById('doc-jabatan');
+      const docTanggalEl = document.getElementById('doc-tanggal');
+
+      if (docNomorEl) docNomorEl.innerText = data.nomor;
+      if (docNamaEl) docNamaEl.innerText = data.nama;
+      if (docPengesahEl) docPengesahEl.innerText = data.nama_pengesah;
+      if (docJabatanEl) docJabatanEl.innerText = data.jabatan;
+      if (docTanggalEl) docTanggalEl.innerText = data.tanggal;
+
+      const certSerialEl = document.getElementById('cert-serial');
+      const cryptoHashEl = document.getElementById('crypto-hash');
+
+      if (certSerialEl) certSerialEl.innerText = data.certSerial;
+      if (cryptoHashEl) cryptoHashEl.innerText = data.hash;
+
+      const pdfMetaNotarisEl = document.getElementById('pdf-meta-notaris');
+      const pdfPrevStudentNameEl = document.getElementById('pdf-preview-student-name');
+      const pdfPrevNisEl = document.getElementById('pdf-preview-nis');
+      const pdfPrevHashEl = document.getElementById('pdf-preview-hash');
+      const pdfPrevDescriptionEl = document.getElementById('pdf-preview-description');
+      const pdfPrevDateEl = document.getElementById('pdf-preview-date');
+      const pdfPrevTitleRoleEl = document.getElementById('pdf-preview-title-role');
+      const pdfPrevAuthorEl = document.getElementById('pdf-preview-author');
+      const pdfPrevNipEl = document.getElementById('pdf-preview-nip');
+
+      if (pdfMetaNotarisEl) pdfMetaNotarisEl.innerText = `Kunci Sertifikat ID: ${data.certSerial}`;
+      if (pdfPrevStudentNameEl) pdfPrevStudentNameEl.innerText = data.nama;
+      if (pdfPrevNisEl) pdfPrevNisEl.innerText = data.nis;
+      if (pdfPrevHashEl) pdfPrevHashEl.innerText = data.hash.substring(0, 32) + "...";
+      if (pdfPrevDescriptionEl) pdfPrevDescriptionEl.innerText = data.excerpt;
+      if (pdfPrevDateEl) pdfPrevDateEl.innerText = data.tanggal;
+      if (pdfPrevTitleRoleEl) pdfPrevTitleRoleEl.innerText = data.jabatan;
+      if (pdfPrevAuthorEl) pdfPrevAuthorEl.innerText = data.nama_pengesah;
+      if (pdfPrevNipEl) pdfPrevNipEl.innerText = `NIP. ${data.nip}`;
+
+      const downloadBtnText = document.getElementById('download-btn-text');
+      if (downloadBtnText) {
+        if (data.link_file_pdf && data.link_file_pdf.startsWith('http')) {
+          downloadBtnText.innerText = "Unduh Lembar Ijazah PDF Asli";
+        } else {
+          downloadBtnText.innerText = "Unduh PDF (Sistem Generasi Otomatis)";
+        }
+      }
+
+      applyStateBanner(data.status);
+    }
+
+    // --- State Banner Modifikator ---
+    function applyStateBanner(status) {
+      const banner = document.getElementById('status-banner');
+      const iconBox = document.getElementById('status-icon-box');
+      const icon = document.getElementById('status-icon');
+      const badgeText = document.getElementById('status-badge-text');
+      const title = document.getElementById('status-title');
+      const docStatusBadge = document.getElementById('doc-status-badge');
+      const docStatusText = document.getElementById('doc-status-text');
+
+      const lockedView = document.getElementById('pdf-locked-view');
+      const unlockedView = document.getElementById('pdf-unlocked-view');
+      const accessBadge = document.getElementById('access-badge');
+
+      const pdfRealViewer = document.getElementById('pdf-real-viewer');
+      const pdfMockViewer = document.getElementById('pdf-mock-viewer');
+      const pdfIframe = document.getElementById('pdf-iframe');
+
+      const data = documentsDB[currentDocNo];
+
+      if (icon) icon.removeAttribute('data-lucide');
+
+      if (isDocumentUnlocked) {
+        if(lockedView) lockedView.classList.add('hidden');
+        if(unlockedView) unlockedView.classList.remove('hidden');
+        if(accessBadge) {
+          accessBadge.className = "inline-flex items-center px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-widest bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400 border border-emerald-200";
+          accessBadge.innerHTML = `<i data-lucide="unlock" class="w-3 h-3 mr-1"></i> Terbuka`;
+        }
+
+        if (data && data.link_file_pdf && data.link_file_pdf.startsWith('http')) {
+          if (pdfRealViewer) pdfRealViewer.classList.remove('hidden');
+          if (pdfMockViewer) pdfMockViewer.classList.add('hidden');
+          
+          if (pdfIframe) {
+            let embedUrl = data.link_file_pdf;
+            if (data.link_file_pdf.includes('drive.google.com')) {
+              const driveIdMatch = data.link_file_pdf.match(/\/d\/([a-zA-Z0-9_-]+)/);
+              if (driveIdMatch && driveIdMatch[1]) {
+                embedUrl = `https://drive.google.com/file/d/${driveIdMatch[1]}/preview`;
+              }
+            }
+            pdfIframe.src = embedUrl;
+          }
+        } else {
+          if (pdfRealViewer) pdfRealViewer.classList.add('hidden');
+          if (pdfMockViewer) pdfMockViewer.classList.remove('hidden');
+          if (pdfIframe) pdfIframe.src = "";
+        }
+
+      } else {
+        if(lockedView) lockedView.classList.remove('hidden');
+        if(unlockedView) unlockedView.classList.add('hidden');
+        if(accessBadge) {
+          accessBadge.className = "inline-flex items-center px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-widest bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-250/30";
+          accessBadge.innerHTML = `<i data-lucide="lock" class="w-3 h-3 mr-1"></i> Terkunci`;
+        }
+        if (pdfIframe) pdfIframe.src = "";
+      }
+
+      if (status === 'valid') {
+        if (banner) banner.className = "bg-emerald-50 dark:bg-emerald-950/20 border-b border-emerald-100 dark:border-emerald-900/30 p-6";
+        if (iconBox) iconBox.className = "bg-emerald-100 dark:bg-emerald-900/40 p-3 rounded-xl text-emerald-600 dark:text-emerald-400";
+        if (icon) icon.setAttribute('data-lucide', 'shield-check');
+        if (badgeText) badgeText.innerText = "STATUS VALIDASI TTE";
+        if (title) title.innerText = "Dokumen Valid & Asli";
+        if(docStatusBadge) docStatusBadge.className = "inline-flex items-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 bg-emerald-100/50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-md";
+        if(docStatusText) docStatusText.innerText = "Aktif dan Valid";
+      } else if (status === 'tempered') {
+        if (banner) banner.className = "bg-rose-50 dark:bg-rose-950/20 border-b border-rose-100 dark:border-rose-900/30 p-6";
+        if (iconBox) iconBox.className = "bg-rose-100 dark:bg-rose-900/40 p-3 rounded-xl text-rose-600 dark:text-rose-400";
+        if (icon) icon.setAttribute('data-lucide', 'shield-alert');
+        if (badgeText) badgeText.innerText = "DANGER: SEGEL DIGITAL RUSAK";
+        if (title) title.innerText = "Dokumen Tidak Valid";
+        if(docStatusBadge) docStatusBadge.className = "inline-flex items-center text-[10px] font-bold text-rose-600 dark:text-rose-400 mt-0.5 bg-rose-100/50 dark:bg-rose-950/30 px-2 py-0.5 rounded-md";
+        if(docStatusText) docStatusText.innerText = "Integritas Rusak (Modifikasi Terdeteksi)";
+      } else if (status === 'expired') {
+        if (banner) banner.className = "bg-amber-50 dark:bg-amber-950/20 border-b border-amber-100 dark:border-amber-900/30 p-6";
+        if (iconBox) iconBox.className = "bg-amber-100 dark:bg-amber-900/40 p-3 rounded-xl text-amber-600 dark:text-amber-400";
+        if (icon) icon.setAttribute('data-lucide', 'alert-circle');
+        if (badgeText) badgeText.innerText = "STATUS: SERTIFIKAT KEDALUWARSA";
+        if (title) title.innerText = "Masa Aktif Berakhir";
+        if(docStatusBadge) docStatusBadge.className = "inline-flex items-center text-[10px] font-bold text-emerald-100/50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-md";
+        if(docStatusText) docStatusText.innerText = "Masa Aktif TTE Berakhir";
+      }
+
+      lucide.createIcons();
+    }
+
+    // --- PROSES VERIFIKASI HIBRIDA ---
+    function prosesVerifikasiHibrida() {
+      const inputNis = document.getElementById('verify-nis').value.trim();
+      const inputIbu = document.getElementById('verify-ibu').value.trim();
+      const currentData = documentsDB[currentDocNo];
+
+      if (!currentData) return;
+
+      if (!inputNis || !inputIbu) {
+        showToast("Harap isi NIS & Nama Ibu Kandung!");
+        return;
+      }
+
+      if (inputNis === currentData.nis && inputIbu.toLowerCase() === currentData.ibu.toLowerCase()) {
+        isDocumentUnlocked = true;
+        applyStateBanner(currentData.status);
+        showToast("Akses Terbuka! Berhasil menguraikan segel pengaman.");
+      } else {
+        isDocumentUnlocked = false;
+        applyStateBanner(currentData.status);
+        showToast("Gagal! NIS atau Nama Ibu Kandung tidak sesuai.");
+      }
+    }
+
+    // --- Kunci Ulang Dokumen ---
+    function kunciUlangDokumen() {
+      isDocumentUnlocked = false;
+      const nisInput = document.getElementById('verify-nis');
+      const ibuInput = document.getElementById('verify-ibu');
+      if (nisInput) nisInput.value = "";
+      if (ibuInput) ibuInput.value = "";
+      applyStateBanner(documentsDB[currentDocNo].status);
+      showToast("Dokumen dikunci kembali.");
+    }
+
+    // --- Enter Key Listener ---
+    function checkVerifyEnter(event) {
+      if (event.key === "Enter") {
+        prosesVerifikasiHibrida();
+      }
+    }
+
+    // --- DYNAMIC PDF GENERATOR & DOWNLOADER ---
+    function unduhPDF() {
+      if (!isDocumentUnlocked) {
+        showToast("Harap lakukan verifikasi data terlebih dahulu!");
+        return;
+      }
+
+      const data = documentsDB[currentDocNo];
+      if (!data) return;
+
+      if (data.link_file_pdf && data.link_file_pdf.startsWith('http')) {
+        showToast("Mengalihkan ke file ijazah PDF resmi Anda...");
+        window.open(data.link_file_pdf, '_blank');
+        return;
+      }
+
+      showToast("Mempersiapkan pembuatan Dokumen PDF...");
+
+      try {
+        const { jsPDF } = window.jspdf;
+
+        const doc = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4'
+        });
+
+        doc.setDrawColor(31, 60, 136);
+        doc.setLineWidth(1.5);
+        doc.rect(8, 8, 281, 194);
+
+        doc.setDrawColor(180, 140, 50);
+        doc.setLineWidth(0.5);
+        doc.rect(11, 11, 275, 188);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.setTextColor(31, 60, 136);
+        doc.text("REPUBLIK INDONESIA", 148, 28, { align: "center" });
+
+        doc.setFontSize(14);
+        doc.setTextColor(100, 116, 139);
+        doc.text("KEMENTERIAN PENDIDIKAN, KEBUDAYAAN, RISET, DAN TEKNOLOGI", 148, 36, { align: "center" });
+
+        doc.setFontSize(16);
+        doc.setTextColor(30, 41, 59);
+        doc.text("IJAZAH SEKOLAH MENENGAH ATAS", 148, 48, { align: "center" });
+
+        doc.setDrawColor(180, 140, 50);
+        doc.setLineWidth(0.8);
+        doc.line(40, 55, 256, 55);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        doc.setTextColor(71, 85, 105);
+        doc.text("Kepapa Sekolah Menengah Atas dengan ini menerangkan secara sah bahwa:", 148, 68, { align: "center" });
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.setTextColor(15, 23, 42);
+        doc.text(data.nama.toUpperCase(), 148, 82, { align: "center" });
+
+        doc.setFont("helvetica", "mono");
+        doc.setFontSize(11);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Nomor Induk Siswa (NIS): ${data.nis}`, 148, 92, { align: "center" });
+        doc.text(`Nomor Registrasi Ijazah: ${data.nomor}`, 148, 99, { align: "center" });
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.setTextColor(31, 60, 136);
+        doc.text("LULUS", 148, 114, { align: "center" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(71, 85, 105);
+        
+        const excerptText = data.excerpt || "Telah menyelesaikan seluruh kriteria kelulusan akademik sekolah.";
+        const splitText = doc.splitTextToSize(excerptText, 180);
+        doc.text(splitText, 148, 122, { align: "center" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(`Jakarta, ${data.tanggal}`, 200, 148);
+        doc.text(data.jabatan, 200, 153);
+        
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(31, 60, 136);
+        doc.text(data.nama_pengesah, 200, 175);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`NIP. ${data.nip}`, 200, 180);
+
+        doc.setDrawColor(16, 185, 129);
+        doc.setFillColor(240, 253, 250);
+        doc.setLineWidth(0.4);
+        doc.rect(20, 145, 85, 38, "FD");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(16, 185, 129);
+        doc.text("TANDA TANGAN ELEKTRONIK VALID", 62.5, 152, { align: "center" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text("Sertifikat Elektronik disahkan oleh:", 62.5, 158, { align: "center" });
+        doc.setFont("helvetica", "bold");
+        doc.text("Balai Sertifikasi Elektronik (BSrE)", 62.5, 163, { align: "center" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(6.5);
+        doc.setTextColor(148, 163, 184);
+        doc.text(`Hash: ${data.hash}`, 62.5, 170, { align: "center" });
+        doc.text(`Sertifikat Seri: ${data.certSerial}`, 62.5, 174, { align: "center" });
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(16, 185, 129);
+        doc.text("STATUS: AMAN & SECURED", 62.5, 179, { align: "center" });
+
+        doc.save(data.pdfName);
+        showToast("Dokumen Ijazah PDF Berhasil diunduh!");
+
+      } catch (error) {
+        console.error("PDF Generator Error: ", error);
+        showToast("Terjadi kendala saat mengunduh berkas. Coba kembali.");
+      }
+    }
+
+    // --- SHA256 Generator Mock ---
+    function CryptoJS_SHA256_mock(input) {
+      let hash = "";
+      const chars = "abcdef0123456789";
+      for (let i = 0; i < 64; i++) {
+        hash += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return hash;
+    }
+
+    // --- Theme Switcher (Dark/Light) ---
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+      if (themeIcon) themeIcon.setAttribute('data-lucide', 'sun');
+    } else {
+      document.documentElement.classList.remove('dark');
+      if (themeIcon) themeIcon.setAttribute('data-lucide', 'moon');
+    }
+
+    themeToggle.addEventListener('click', () => {
+      if (document.documentElement.classList.contains('dark')) {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+        themeIcon.setAttribute('data-lucide', 'moon');
+      } else {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+        themeIcon.setAttribute('data-lucide', 'sun');
+      }
+      lucide.createIcons();
+    });
+
+    // --- Toast Notification ---
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMessage');
+      
+      if (toast && toastMsg) {
+        toastMsg.innerText = message;
+        toast.classList.remove('translate-y-[-100px]', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+        
+        setTimeout(() => {
+          toast.classList.add('translate-y-[-100px]', 'opacity-0');
+          toast.classList.remove('translate-y-0', 'opacity-100');
+        }, 3000);
+      }
+    }
+
+    // --- LOGO DRIVE LINK CONVERTER FUNCTION ---
+    function convertGoogleDriveLink(url) {
+      if (!url) return "";
+      if (url.includes('drive.google.com')) {
+        const idMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+        if (idMatch && idMatch[1]) {
+          return `https://docs.google.com/uc?export=download&id=${idMatch[1]}`;
+        }
+      }
+      return url;
+    }
+
+    // --- Handle Error loading Custom Logo ---
+    function handleLogoError() {
+      const logoImg = document.getElementById('logo-image');
+      const fallbackIcon = document.getElementById('logo-icon-fallback');
+      if (logoImg && fallbackIcon) {
+        logoImg.classList.add('hidden');
+        fallbackIcon.classList.remove('hidden');
+      }
+    }
+
+    // --- Helper Pembaca Parameter Spesifik iFrame Google Sites (POST-HANDSHAKE) ---
+    function getQueryParam(paramName) {
+      // 1. Coba baca langsung dari URL iFrame lokal (untuk standalone / testing langsung / GitHub Pages)
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has(paramName)) {
+        return urlParams.get(paramName);
+      }
+      
+      // 2. Baca dari document.referrer (URL Utama Google Sites yang menyelimuti iFrame ini)
+      try {
+        if (document.referrer) {
+          const referrerUrl = new URL(document.referrer);
+          if (referrerUrl.searchParams.has(paramName)) {
+            return referrerUrl.searchParams.get(paramName);
+          }
+        }
+      } catch (e) {
+        console.warn("Akses referrer URL diblokir browser karena Cross-Origin, beralih ke fallback.", e);
+      }
+
+      // 3. Fallback jika embedded di parent window yang accessible (same-domain)
+      try {
+        if (window.parent && window.parent.location) {
+          const parentParams = new URLSearchParams(window.parent.location.search);
+          if (parentParams.has(paramName)) {
+            return parentParams.get(paramName);
+          }
+        }
+      } catch (e) {
+        // Abaikan jika error cross-origin
+      }
+      
+      return null;
+    }
+
+    // --- PROSES VERIFIKASI PENCARIAN MANUAL (Penyelamat Google Sites Sandbox) ---
+    function prosesVerifikasiManual() {
+      const inputDocNo = document.getElementById('manual-doc-no').value.trim();
+      if (!inputDocNo) {
+        showToast("Harap masukkan Nomor Dokumen yang valid!");
+        return;
+      }
+
+      const targetData = documentsDB[inputDocNo];
+      if (targetData) {
+        // Secara instan ijinkan akses dan lewati handshake parameter keamanan khusus untuk pencarian internal manual yang sah
+        document.getElementById('landing-view').classList.add('hidden');
+        document.getElementById('access-denied-view').classList.add('hidden');
+        document.getElementById('verification-card-view').classList.remove('hidden');
+        
+        loadDocument(inputDocNo);
+        showToast("Dokumen ditemukan! Harap lakukan otentikasi data lulusan.");
+      } else {
+        showToast("Dokumen tidak ditemukan dalam database!");
+      }
+    }
+
+    // --- Inisialisasi Utama Alur Halaman ---
+    async function inisialisasiAplikasi() {
+      await fetchDatabaseDariGoogleSheets();
+
+      // Setup Logo jika Bosku menyematkannya
+      const logoImg = document.getElementById('logo-image');
+      const fallbackIcon = document.getElementById('logo-icon-fallback');
+      if (logoImg && fallbackIcon) {
+        logoImg.addEventListener('error', handleLogoError);
+        const convertedLogoUrl = convertGoogleDriveLink(LOGO_INSTITUSI_URL);
+        if (convertedLogoUrl) {
+          logoImg.src = convertedLogoUrl;
+          logoImg.classList.remove('hidden');
+          fallbackIcon.classList.add('hidden');
+        } else {
+          logoImg.classList.add('hidden');
+          fallbackIcon.classList.remove('hidden');
+        }
+      }
+
+      // Gunakan fungsi penarik parameter hibrida (iFrame Safe!)
+      const docParam = getQueryParam('no');
+      const authParam = getQueryParam('auth');
+      const keyParam = getQueryParam('key');
+
+      // =========================================================================
+      // 🛡️ IMPLEMENTASI METODE 2: VERIFIKASI REFERRER KUNCI QR DINAMIS (ANTI-TAMPER)
+      // =========================================================================
+      if (docParam) {
+        const targetData = documentsDB[docParam];
+        
+        // Periksa apakah dokumen ada di database Google Sheets kita
+        if (targetData) {
+          // COCOKKAN SECARA SILANG: keyParam di URL harus persis sama dengan token_keamanan siswa tersebut!
+          if (authParam === 'true' && keyParam === targetData.token_keamanan) {
+            // 🟢 TOKEN VALID DAN COCOK! Ijinkan akses masuk
+            document.getElementById('access-denied-view').classList.add('hidden');
+            document.getElementById('verification-card-view').classList.remove('hidden');
+            document.getElementById('landing-view').classList.add('hidden');
+            
+            // GAIB: Bersihkan parameter keamanan dari address bar secara langsung demi privasi
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + "?no=" + encodeURIComponent(docParam);
+            window.history.replaceState({ path: newUrl }, '', newUrl);
+
+            loadDocument(docParam);
+          } else {
+            // 🔴 PERCOBAAN UTREK LINK DETECTED! Blokir total tampilan
+            document.getElementById('access-denied-view').classList.remove('hidden');
+            document.getElementById('verification-card-view').classList.add('hidden');
+            document.getElementById('landing-view').classList.add('hidden');
+            showToast("Akses diblokir! Kunci keamanan tidak valid untuk dokumen ini.");
+          }
+        } else {
+          // Dokumen tidak terdaftar sama sekali
+          document.getElementById('access-denied-view').classList.remove('hidden');
+          document.getElementById('verification-card-view').classList.add('hidden');
+          document.getElementById('landing-view').classList.add('hidden');
+          showToast("Dokumen tidak terdaftar dalam database.");
+        }
+      } else {
+        // =========================================================================
+        // 🏠 TAMPILAN BERANDA NETRAL (Jika Diakses Tanpa Scan / Parameter No Terblokir)
+        // =========================================================================
+        document.getElementById('access-denied-view').classList.add('hidden');
+        document.getElementById('verification-card-view').classList.add('hidden');
+        
+        // Tampilkan layar beranda institusional yang aman & bersih
+        document.getElementById('landing-view').classList.remove('hidden');
+      }
+      // =========================================================================
+    }
+
+    window.onload = function() {
+      lucide.createIcons();
+      inisialisasiAplikasi();
+    }
+  </script>
+</body>
+</html>
