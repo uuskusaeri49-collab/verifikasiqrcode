@@ -56,8 +56,8 @@
           <i data-lucide="shield-check" class="w-5 h-5"></i>
         </div>
         <div>
-          <span class="font-extrabold text-base text-brand-500 dark:text-brand-100 block tracking-wider">E-VERIFY TTE</span>
-          <span class="text-[9px] font-semibold text-slate-500 dark:text-slate-400 block -mt-1 uppercase tracking-wider">Sistem Verifikasi Keabsahan Ijazah</span>
+          <span class="font-extrabold text-base text-brand-500 dark:text-brand-100 block tracking-wider font-sans">E-VERIFY TTE</span>
+          <span class="text-[9px] font-semibold text-slate-500 dark:text-slate-400 block -mt-1 uppercase tracking-wider font-sans">Sistem Verifikasi Keabsahan Ijazah</span>
         </div>
       </div>
       
@@ -102,26 +102,41 @@
             Sistem Verifikasi Tanda Tangan Elektronik (TTE) ini digunakan untuk memvalidasi keaslian dokumen Ijazah, Piagam, dan SK Kelulusan yang diterbitkan secara resmi oleh pihak lembaga sekolah.
           </p>
           
-          <!-- TOMBOL INPUT NOMOR MANUAL JIKA DETEKSI IFRAME GOOGLE MEMBATASI PARAMETER URL -->
+          <!-- TOMBOL INPUT NOMOR MANUAL JIKA DETEKSI IFRAME GOOGLE MEMBATASI PARAMETER URL (DENGAN COCOKAN NIS) -->
           <div class="bg-slate-50 dark:bg-slate-900/60 p-5 rounded-xl border border-slate-100 dark:border-slate-800 text-left space-y-3">
-            <span class="font-bold text-xs text-slate-800 dark:text-slate-300 block mb-1 uppercase tracking-wider font-sans">Verifikasi Manual:</span>
-            <div class="space-y-2 col-span-2">
+            <span class="font-bold text-xs text-slate-800 dark:text-slate-300 block mb-1 uppercase tracking-wider font-sans flex items-center gap-1">
+              <i data-lucide="search-code" class="w-4 h-4 text-brand-500"></i>
+              <span>Verifikasi Manual Dua Kunci:</span>
+            </span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label class="block text-[9px] font-bold text-slate-550 uppercase mb-1 font-sans">Nomor Dokumen / Ijazah</label>
-                <div class="flex gap-2">
-                  <input type="text" id="manual-doc-no" placeholder="Contoh: 001/SK/2026" class="w-full bg-white dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded-xl py-2 px-3 text-xs focus:ring-1 focus:ring-brand-500 focus:outline-none dark:text-white font-mono">
-                  <button onclick="prosesVerifikasiManual()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 shrink-0 font-sans">
-                    <i data-lucide="search" class="w-3.5 h-3.5"></i> Cari Data
-                  </button>
+                <label class="block text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Nomor Dokumen / Ijazah</label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                  </span>
+                  <input type="text" id="manual-doc-no" placeholder="Contoh: 001/SK/2026" class="w-full bg-white dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded-xl py-2 pl-9 pr-3 text-xs focus:ring-1 focus:ring-brand-500 focus:outline-none dark:text-white font-mono">
+                </div>
+              </div>
+              <div>
+                <label class="block text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Nomor Induk Siswa (NIS)</label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+                  </span>
+                  <input type="text" id="manual-nis" placeholder="Contoh: 12345" class="w-full bg-white dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded-xl py-2 pl-9 pr-3 text-xs focus:ring-1 focus:ring-brand-500 focus:outline-none dark:text-white font-mono">
                 </div>
               </div>
             </div>
+            <button onclick="prosesVerifikasiManual()" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 font-sans">
+              <i data-lucide="search" class="w-4 h-4"></i> Cari &amp; Verifikasi Dokumen
+            </button>
           </div>
 
           <div class="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-left space-y-2 text-[11px] text-slate-600 dark:text-slate-405 font-medium font-sans">
             <span class="font-bold text-slate-800 dark:text-slate-300 block mb-1">Cara Melakukan Verifikasi Keabsahan:</span>
             <p class="flex items-center"><span class="w-2 h-2 rounded-full bg-brand-500 mr-2 shrink-0"></span> Pindai (scan) QR Code pengesahan yang tertera pada bagian bawah kertas dokumen fisik asli.</p>
-            <p class="flex items-center"><span class="w-2 h-2 rounded-full bg-brand-500 mr-2 shrink-0"></span> Jika data tidak langsung muncul karena proteksi browser, ketikkan Nomor Dokumen di atas.</p>
+            <p class="flex items-center"><span class="w-2 h-2 rounded-full bg-brand-500 mr-2 shrink-0"></span> Jika data tidak langsung muncul karena proteksi browser, ketikkan Nomor Dokumen &amp; NIS di atas.</p>
             <p class="flex items-center"><span class="w-2 h-2 rounded-full bg-brand-500 mr-2 shrink-0"></span> Lakukan autentikasi data lulusan untuk membuka lembar dokumen digital aslinya.</p>
           </div>
         </div>
@@ -201,7 +216,7 @@
               <div class="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
                 <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">Status Sertifikat TTE</span>
                 <span id="doc-status-badge" class="inline-flex items-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 bg-emerald-100/50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-md">
-                  <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+                  <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                   <span id="doc-status-text">Aktif dan Valid</span>
                 </span>
               </div>
@@ -298,7 +313,7 @@
             </div>
 
             <!-- VIEW 2: UNLOCKED IJAZAH PREVIEW -->
-            <div id="pdf-unlocked-view" class="hidden relative bg-slate-50 dark:bg-slate-900/90 border-2 border-brand-500 rounded-xl p-4 overflow-hidden transition-all duration-300">
+            <div id="pdf-unlocked-view" class="hidden relative bg-slate-50 dark:bg-slate-900/90 border-2 border-brand-500 rounded-xl p-4 overflow-hidden transition-all duration-300 font-sans">
               
               <!-- SUB-VIEW 2A: RENDER EMBED PDF DRIVE ASLI -->
               <div id="pdf-real-viewer" class="hidden w-full h-[550px] rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-white">
@@ -316,7 +331,7 @@
                 <div class="relative z-10 text-center space-y-4 text-xs">
                   <div class="border-b border-double border-amber-600/40 pb-3 space-y-1">
                     <h4 class="font-serif-elegant font-bold text-sm sm:text-base text-brand-500 dark:text-brand-100 tracking-widest uppercase">Republik Indonesia</h4>
-                    <p class="text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold font-sans">Ijazah Kelulusan Sekolah Menengah Atas</p>
+                    <p class="text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold font-sans">Ijazah Kelulusan Sekolah Dasar</p>
                     <p id="pdf-meta-notaris" class="text-[8px] italic font-mono text-slate-450 dark:text-slate-500">-</p>
                   </div>
                   
@@ -373,7 +388,6 @@
             </div>
 
           </div>
-
         </div>
       </div>
       
@@ -439,7 +453,7 @@
         pdfName: "Ijazah_Ahmad_2026.pdf",
         nis: "12345",
         ibu: "Siti Aminah",
-        excerpt: "Perihal: Surat Keputusan Kelulusan Sekolah Menengah Atas Tahun Ajaran 2025/2026. Menetapkan kelulusan Ahmad S.Pd sebagai peraih predikat amat baik.",
+        excerpt: "Perihal: Surat Keputusan Kelulusan Sekolah Dasar Tahun Ajaran 2025/2026. Menetapkan kelulusan Ahmad S.Pd sebagai peraih predikat amat baik.",
         link_file_pdf: ""
       },
       "002/SP/2026": {
@@ -803,7 +817,7 @@
       if (nisInput) nisInput.value = "";
       if (ibuInput) ibuInput.value = "";
       loadDocument(currentDocNo); // Kunci kembali sensor
-      applyStateBanner(documentsDB[currentDocNo].status);
+      applyStateBanner(defaultLocalDB[currentDocNo] ? defaultLocalDB[currentDocNo].status : 'valid');
       showToast("Dokumen dikunci kembali.");
     }
 
@@ -1001,6 +1015,7 @@
       // 1. Coba baca langsung dari URL iFrame lokal (untuk standalone / testing langsung / GitHub Pages)
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.has(paramName)) {
+        // PERBAIKAN: Bersihkan karakter sampah "]" atau sisa format markdown secara rekursif
         let rawValue = urlParams.get(paramName);
         if (rawValue) {
           rawValue = rawValue.replace(/[\]\[\)\(]/g, '').trim();
@@ -1046,19 +1061,32 @@
     // --- PROSES VERIFIKASI PENCARIAN MANUAL (Penyelamat Google Sites Sandbox) ---
     function prosesVerifikasiManual() {
       const inputDocNo = document.getElementById('manual-doc-no').value.trim();
-      if (!inputDocNo) {
-        showToast("Harap masukkan Nomor Dokumen yang valid!");
+      const inputNis = document.getElementById('manual-nis').value.trim();
+      
+      if (!inputDocNo || !inputNis) {
+        showToast("Harap masukkan Nomor Dokumen dan NIS yang valid!");
         return;
       }
 
       const targetData = documentsDB[inputDocNo];
       if (targetData) {
-        // Secara instan ijinkan akses dan lewati handshake parameter keamanan khusus untuk pencarian internal manual yang sah
-        document.getElementById('landing-view').classList.add('hidden');
-        document.getElementById('verification-card-view').classList.remove('hidden');
-        
-        loadDocument(inputDocNo);
-        showToast("Dokumen ditemukan! Harap lakukan otentikasi data lulusan.");
+        // Cocokkan NIS siswa secara silang dengan database Google Sheets/Local
+        if (targetData.nis === inputNis) {
+          document.getElementById('landing-view').classList.add('hidden');
+          document.getElementById('verification-card-view').classList.remove('hidden');
+          
+          loadDocument(inputDocNo);
+          
+          // Pre-fill NIS secara otomatis di panel 2-faktor agar verifikator hanya tinggal mengisi nama ibu kandung saja
+          const verifyNisInput = document.getElementById('verify-nis');
+          if (verifyNisInput) {
+            verifyNisInput.value = inputNis;
+          }
+          
+          showToast("Dokumen ditemukan! Masukkan Nama Ibu Kandung untuk membuka ijazah.");
+        } else {
+          showToast("Gagal! Nomor Dokumen dan NIS tidak cocok.");
+        }
       } else {
         showToast("Dokumen tidak ditemukan dalam database!");
       }
