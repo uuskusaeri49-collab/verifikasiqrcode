@@ -201,7 +201,7 @@
               <div class="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
                 <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 block uppercase tracking-wider">Status Sertifikat TTE</span>
                 <span id="doc-status-badge" class="inline-flex items-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 bg-emerald-100/50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-md">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+                  <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
                   <span id="doc-status-text">Aktif dan Valid</span>
                 </span>
               </div>
@@ -604,13 +604,6 @@
         showToast("Dokumen tidak ditemukan!");
         return;
       }
-
-      isDocumentUnlocked = false;
-      
-      const nisInput = document.getElementById('verify-nis');
-      const ibuInput = document.getElementById('verify-ibu');
-      if (nisInput) nisInput.value = "";
-      if (ibuInput) ibuInput.value = "";
 
       const pdfIframe = document.getElementById('pdf-iframe');
       if (pdfIframe) pdfIframe.src = "";
