@@ -82,13 +82,13 @@
   </div>
 
   <!-- Area Konten Utama -->
-  <main class="flex-grow max-w-3xl w-full mx-auto px-4 py-8 flex flex-col justify-center">
+  <main class="flex-grow max-w-3xl w-full mx-auto px-4 py-8 flex flex-col justify-center font-sans">
 
     <!-- VIEW A: NEUTRAL LANDING SCREEN (Tampilan Beranda Steril Tanpa Data Siswa) -->
-    <div id="landing-view" class="hidden space-y-6 transition-all duration-300 animate-fadeIn font-sans">
+    <div id="landing-view" class="hidden space-y-6 transition-all duration-300 animate-fadeIn">
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8 text-center space-y-6">
         
-        <!-- DYNAMIC LOGO CONTAINER (Drives custom Drive Logo / Fallback Icon) -->
+        <!-- DYNAMIC LOGO CONTAINER -->
         <div class="inline-flex justify-center items-center">
           <div id="logo-icon-fallback" class="bg-brand-50 dark:bg-brand-900/30 p-5 rounded-full text-brand-500 dark:text-brand-100 shadow-inner">
             <i data-lucide="file-key-2" class="w-16 h-16"></i>
@@ -104,7 +104,7 @@
           
           <!-- TOMBOL INPUT NOMOR MANUAL JIKA DETEKSI IFRAME GOOGLE MEMBATASI PARAMETER URL -->
           <div class="bg-slate-50 dark:bg-slate-900/60 p-5 rounded-xl border border-slate-100 dark:border-slate-800 text-left space-y-3">
-            <span class="font-bold text-xs text-slate-800 dark:text-slate-300 block mb-1 uppercase tracking-wider">Verifikasi Manual (Alternatif iFrame Google):</span>
+            <span class="font-bold text-xs text-slate-800 dark:text-slate-300 block mb-1 uppercase tracking-wider">Verifikasi Manual:</span>
             <div class="space-y-2 col-span-2">
               <div>
                 <label class="block text-[9px] font-bold text-slate-550 uppercase mb-1">Nomor Dokumen / Ijazah</label>
@@ -132,8 +132,8 @@
       </div>
     </div>
     
-    <!-- VIEW B: ERROR AKSES ILEGAL / LINK COPYAN (Metode 2 Block Screen) -->
-    <div id="access-denied-view" class="hidden space-y-6 transition-all duration-300 font-sans">
+    <!-- VIEW B: ERROR AKSES ILEGAL / LINK COPYAN -->
+    <div id="access-denied-view" class="hidden space-y-6 transition-all duration-300">
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-red-200 dark:border-red-950 p-8 text-center space-y-6">
         <div class="inline-flex bg-red-100 dark:bg-red-950/50 p-4 rounded-full text-red-600 dark:text-red-400 animate-bounce">
           <i data-lucide="shield-alert" class="w-12 h-12"></i>
@@ -154,9 +154,9 @@
     </div>
 
     <!-- VIEW C: CORE VERIFICATION CARD (Tampilan Utama yang Terlindungi) -->
-    <div id="verification-card-view" class="hidden space-y-6 transition-all duration-300 font-sans">
+    <div id="verification-card-view" class="hidden space-y-6 transition-all duration-300">
       
-      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700/80 overflow-hidden font-sans">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700/80 overflow-hidden">
         
         <!-- State-Based Header -->
         <div id="status-banner" class="bg-emerald-50 dark:bg-emerald-950/20 border-b border-emerald-100 dark:border-emerald-900/30 p-6">
@@ -290,12 +290,12 @@
 
               <div class="max-w-md mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
                 <div>
-                  <label class="block text-[9px] font-bold text-slate-550 uppercase mb-1">Nomor Induk Siswa (NIS)</label>
+                  <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nomor Induk Siswa (NIS)</label>
                   <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                       <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
                     </span>
-                    <input type="text" id="verify-nis" placeholder="Contoh: 12345" class="w-full bg-white dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded-xl py-2 pl-9 pr-3 text-xs focus:ring-1 focus:ring-brand-500 focus:outline-none dark:text-white">
+                    <input type="text" id="verify-nis" placeholder="Contoh: 12345" class="w-full bg-white dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded-xl py-2 pl-9 pr-3 text-xs focus:ring-1 focus:ring-brand-500 focus:outline-none dark:text-white font-mono">
                   </div>
                 </div>
 
@@ -423,7 +423,6 @@
     // =========================================================================
 
     // --- Basis Data Cadangan / Fallback (Jika koneksi internet gagal / belum terpasang) ---
-    // Diisi token_keamanan acak berbeda untuk simulasi lokal aman
     const defaultLocalDB = {
       "001/SK/2026": {
         nomor: "001/SK/2026",
@@ -1009,7 +1008,12 @@
       // 1. Coba baca langsung dari URL iFrame lokal (untuk standalone / testing langsung / GitHub Pages)
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.has(paramName)) {
-        return urlParams.get(paramName);
+        // PERBAIKAN: Bersihkan karakter sampah "]" atau sisa format markdown secara rekursif
+        let rawValue = urlParams.get(paramName);
+        if (rawValue) {
+          rawValue = rawValue.replace(/[\]\[\)\(]/g, '').trim();
+        }
+        return rawValue;
       }
       
       // 2. Baca dari document.referrer (URL Utama Google Sites yang menyelimuti iFrame ini)
@@ -1017,7 +1021,11 @@
         if (document.referrer) {
           const referrerUrl = new URL(document.referrer);
           if (referrerUrl.searchParams.has(paramName)) {
-            return referrerUrl.searchParams.get(paramName);
+            let rawValue = referrerUrl.searchParams.get(paramName);
+            if (rawValue) {
+              rawValue = rawValue.replace(/[\]\[\)\(]/g, '').trim();
+            }
+            return rawValue;
           }
         }
       } catch (e) {
@@ -1029,7 +1037,11 @@
         if (window.parent && window.parent.location) {
           const parentParams = new URLSearchParams(window.parent.location.search);
           if (parentParams.has(paramName)) {
-            return parentParams.get(paramName);
+            let rawValue = parentParams.get(paramName);
+            if (rawValue) {
+              rawValue = rawValue.replace(/[\]\[\)\(]/g, '').trim();
+            }
+            return rawValue;
           }
         }
       } catch (e) {
