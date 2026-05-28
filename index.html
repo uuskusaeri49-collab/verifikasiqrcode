@@ -45,7 +45,7 @@
 <body class="bg-[#f8fafc] dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200 font-sans font-medium">
 
   <!-- Chosen Palette: Warm Neutrals with Corporate Navy Accents -->
-  <!-- Application Structure Plan: Menggunakan arsitektur keamanan bertingkat (state-based). Memisahkan halaman utama selamat datang (Landing View), halaman verifikasi data terenkripsi (Core Verification Card), dan halaman blokir akses (Access Denied View). Hal ini menjamin privasi data siswa (UU PDP) sehingga data tidak akan bocor ke publik tanpa pemindaian QR Code fisik asli yang sah. -->
+  <!-- Application Structure Plan: Menggunakan arsitektur keamanan berbasis 2-Factor Authentication (NIS & Nama Ibu). Memisahkan halaman utama selamat datang (Landing View) dan halaman verifikasi data terenkripsi (Core Verification Card). Data ijazah asli dan file PDF tetap terkunci aman dan hanya bisa diakses setelah verifikasi NIS dan Nama Ibu Kandung berhasil dicocokkan secara real-time dengan database Google Sheets. -->
   <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 
   <!-- Header / Navigasi -->
@@ -109,7 +109,7 @@
               <div>
                 <label class="block text-[9px] font-bold text-slate-550 uppercase mb-1">Nomor Dokumen / Ijazah</label>
                 <div class="flex gap-2">
-                  <input type="text" id="manual-doc-no" placeholder="Contoh: 005/SK/Percobaan" class="w-full bg-white dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded-xl py-2 px-3 text-xs focus:ring-1 focus:ring-brand-500 focus:outline-none dark:text-white font-mono">
+                  <input type="text" id="manual-doc-no" placeholder="Contoh: 001/SK/2026" class="w-full bg-white dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded-xl py-2 px-3 text-xs focus:ring-1 focus:ring-brand-500 focus:outline-none dark:text-white font-mono">
                   <button onclick="prosesVerifikasiManual()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 shrink-0 font-sans">
                     <i data-lucide="search" class="w-3.5 h-3.5"></i> Cari Data
                   </button>
@@ -131,29 +131,8 @@
         </div>
       </div>
     </div>
-    
-    <!-- VIEW B: ERROR AKSES ILEGAL / LINK COPYAN -->
-    <div id="access-denied-view" class="hidden space-y-6 transition-all duration-300">
-      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-red-200 dark:border-red-950 p-8 text-center space-y-6">
-        <div class="inline-flex bg-red-100 dark:bg-red-950/50 p-4 rounded-full text-red-600 dark:text-red-400 animate-bounce">
-          <i data-lucide="shield-alert" class="w-12 h-12"></i>
-        </div>
-        <div class="space-y-2 max-w-md mx-auto">
-          <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Akses Verifikasi Ditolak!</h2>
-          <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            Sistem mendeteksi bahwa tautan ini dibuka melalui hasil salinan (*copy-paste*) atau tautan ilegal yang tidak sah.
-          </p>
-          <p class="text-xs font-semibold text-rose-500 bg-rose-50 dark:bg-rose-950/30 py-2 px-3 rounded-lg border border-rose-150">
-            Demi keamanan, dokumen ijazah hanya dapat diverifikasi dengan melakukan pemindaian (scan) langsung pada QR Code fisik dokumen asli!
-          </p>
-        </div>
-        <div class="pt-2">
-          <p class="text-[10px] text-slate-400 uppercase tracking-widest font-mono">Kode Keamanan: ERR_REFERRER_HANDSHAKE_FAILED</p>
-        </div>
-      </div>
-    </div>
 
-    <!-- VIEW C: CORE VERIFICATION CARD (Tampilan Utama yang Terlindungi) -->
+    <!-- VIEW B: CORE VERIFICATION CARD (Tampilan Utama yang Terlindungi) -->
     <div id="verification-card-view" class="hidden space-y-6 transition-all duration-300">
       
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700/80 overflow-hidden">
@@ -290,7 +269,7 @@
 
               <div class="max-w-md mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
                 <div>
-                  <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nomor Induk Siswa (NIS)</label>
+                  <label class="block text-[9px] font-bold text-slate-550 uppercase mb-1">Nomor Induk Siswa (NIS)</label>
                   <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                       <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
@@ -438,8 +417,7 @@
         nis: "12345",
         ibu: "Siti Aminah",
         excerpt: "Perihal: Surat Keputusan Kelulusan Sekolah Menengah Atas Tahun Ajaran 2025/2026. Menetapkan kelulusan Ahmad S.Pd sebagai peraih predikat amat baik.",
-        link_file_pdf: "",
-        token_keamanan: "TOKEN_AHMAD_98765"
+        link_file_pdf: ""
       },
       "002/SP/2026": {
         nomor: "002/SP/2026",
@@ -455,8 +433,7 @@
         nis: "67890",
         ibu: "Kartini",
         excerpt: "Perihal: Piagam Penghargaan Kelulusan Bidang Kejuruan Teknik Informatika Dasar. Menetapkan Zulfa Syahirah lulus secara resmi.",
-        link_file_pdf: "",
-        token_keamanan: "TOKEN_ZULFA_12345"
+        link_file_pdf: ""
       }
     };
 
@@ -553,9 +530,6 @@
               const status = cols[8] ? cols[8].trim().toLowerCase() : "valid";
               const pdfLink = cols[9] ? cols[9].trim() : "";
               const excerpt = cols[10] ? cols[10].trim() : "Ringkasan isi dokumen belum ditambahkan.";
-              
-              // Kolom L (index 11) adalah Kolom Baru: "token_keamanan" dari spreadsheet Bosku!
-              const tokenKeamanan = (cols[11] && cols[11].trim()) ? cols[11].trim() : `TOKEN_SAFE_AUTO_${CryptoJS_SHA256_mock(docNo).substring(0,8)}`;
 
               tempDB[docNo] = {
                 nomor: docNo,
@@ -571,8 +545,7 @@
                 hash: CryptoJS_SHA256_mock(docNo),
                 pdfName: `Ijazah_${namaSiswa.replace(/\s+/g, '_')}.pdf`,
                 link_file_pdf: pdfLink,
-                excerpt: excerpt,
-                token_keamanan: tokenKeamanan
+                excerpt: excerpt
               };
             }
           }
@@ -1063,7 +1036,6 @@
       if (targetData) {
         // Secara instan ijinkan akses dan lewati handshake parameter keamanan khusus untuk pencarian internal manual yang sah
         document.getElementById('landing-view').classList.add('hidden');
-        document.getElementById('access-denied-view').classList.add('hidden');
         document.getElementById('verification-card-view').classList.remove('hidden');
         
         loadDocument(inputDocNo);
@@ -1095,48 +1067,30 @@
 
       // Gunakan fungsi penarik parameter hibrida (iFrame Safe!)
       const docParam = getQueryParam('no');
-      const authParam = getQueryParam('auth');
-      const keyParam = getQueryParam('key');
 
       // =========================================================================
-      // 🛡️ IMPLEMENTASI METODE 2: VERIFIKASI REFERRER KUNCI QR DINAMIS (ANTI-TAMPER)
+      // 🛡️ ALUR BARU: LANGSUNG LOAD DOKUMEN TANPA KUNCI TOKEN (IFRAME & GITHUB PAGES SAFE)
       // =========================================================================
       if (docParam) {
         const targetData = documentsDB[docParam];
         
         // Periksa apakah dokumen ada di database Google Sheets kita
         if (targetData) {
-          // COCOKKAN SECARA SILANG: keyParam di URL harus persis sama dengan token_keamanan siswa tersebut!
-          if (authParam === 'true' && keyParam === targetData.token_keamanan) {
-            // 🟢 TOKEN VALID DAN COCOK! Ijinkan akses masuk
-            document.getElementById('access-denied-view').classList.add('hidden');
-            document.getElementById('verification-card-view').classList.remove('hidden');
-            document.getElementById('landing-view').classList.add('hidden');
-            
-            // GAIB: Bersihkan parameter keamanan dari address bar secara langsung demi privasi
-            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + "?no=" + encodeURIComponent(docParam);
-            window.history.replaceState({ path: newUrl }, '', newUrl);
-
-            loadDocument(docParam);
-          } else {
-            // 🔴 PERCOBAAN UTREK LINK DETECTED! Blokir total tampilan
-            document.getElementById('access-denied-view').classList.remove('hidden');
-            document.getElementById('verification-card-view').classList.add('hidden');
-            document.getElementById('landing-view').classList.add('hidden');
-            showToast("Akses diblokir! Kunci keamanan tidak valid untuk dokumen ini.");
-          }
+          // 🟢 Langsung berikan akses ke Form Autentikasi 2FA (NIS & Nama Ibu)
+          document.getElementById('verification-card-view').classList.remove('hidden');
+          document.getElementById('landing-view').classList.add('hidden');
+          
+          loadDocument(docParam);
         } else {
           // Dokumen tidak terdaftar sama sekali
-          document.getElementById('access-denied-view').classList.remove('hidden');
           document.getElementById('verification-card-view').classList.add('hidden');
-          document.getElementById('landing-view').classList.add('hidden');
+          document.getElementById('landing-view').classList.remove('hidden');
           showToast("Dokumen tidak terdaftar dalam database.");
         }
       } else {
         // =========================================================================
         // 🏠 TAMPILAN BERANDA NETRAL (Jika Diakses Tanpa Scan / Parameter No Terblokir)
         // =========================================================================
-        document.getElementById('access-denied-view').classList.add('hidden');
         document.getElementById('verification-card-view').classList.add('hidden');
         
         // Tampilkan layar beranda institusional yang aman & bersih
